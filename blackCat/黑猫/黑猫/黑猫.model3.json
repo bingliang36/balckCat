@@ -1,0 +1,57 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "黑猫.moc3",
+		"Textures": [
+			"黑猫.8192/texture_00.png"
+		],
+		"Physics": "黑猫.physics3.json",
+		"DisplayInfo": "黑猫.cdi3.json",
+		"Expressions": [
+			{
+				"Name": "expression1",
+				"File": "shengqi.exp3.json"
+			},
+			{
+				"Name": "expression2",
+				"File": "aixinyan.exp3.json"
+			},
+			{
+				"Name": "expression3",
+				"File": "quanquanyan.exp3.json"
+			},
+			{
+				"Name": "expression4",
+				"File": "qianyan.exp3.json"
+			},
+			{
+				"Name": "expression5",
+				"File": "yanlei.exp3.json"
+			},
+			{
+				"Name": "expression6",
+				"File": "lianhong.exp3.json"
+			},
+			{
+				"Name": "expression7",
+				"File": "heilian.exp3.json"
+			}
+		]
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		}
+	],
+	"HitAreas": []
+}

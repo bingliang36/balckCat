@@ -47,11 +47,11 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self.timer.timeout.connect(self.update)
         self.timer.start(16)  # ~60 FPS
 
-        # 微动作时间基准
-        self._anim_t = 0.0
-
-        # 开场动画标志
-        self._intro_frames = 0  # 播放 N 帧后停止，0=未开始
+        # 开场动画
+        self._intro_t = 0.0       # 开场动画流逝时间（秒）
+        self._intro_done = False   # 开场动画是否已结束
+        self._intro_ear_phase = 0.0
+        self._intro_blink_done = False
 
     def initializeGL(self):
         """初始化 OpenGL 和 Live2D 模型"""
@@ -71,8 +71,11 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self.model.SetAutoBreathEnable(True)
         self.model.SetAutoBlinkEnable(True)
 
-        # 启动开场动画（360帧约6秒）
-        self._intro_frames = 415
+        # 启动开场动画（5秒）
+        self._intro_t = 0.0
+        self._intro_done = False
+        self._intro_ear_phase = 0.0
+        self._intro_blink_done = False
 
         print("[live2d] 模型加载完成")
 
@@ -94,40 +97,37 @@ class Live2DOpenGLWidget(QOpenGLWidget):
             t = time()
             dt = t - (self.last_time or t)
             self.last_time = t
-            self._anim_t += dt
 
             # 更新模型（表情、动作的主动画在此计算）
             self.model.Update()
 
-            # 叠加微动作（在 Update 之后叠加，持续性的细微摆动）
-            # v3 physics 规范化到 [-10,10]，输出 scale 约 25
-            # 用 weight 让每次 Set 都以小幅度叠加，不会覆盖主表情/动作
-            mt = self._anim_t
+            # 开场动画（张嘴微笑 + 动耳朵 + 眨眼睛）
+            # 用开场专属时间，不会随程序运行时不断累积
+            INTRO_DURATION = 5.0
+            FADE_START = 4.5  # 从第4.5秒开始 fade，fade 持续 0.5s
 
-            # 开场动画：播放 （360帧约6秒）后自动停止
-            if self._intro_frames > 0:
-                self._intro_frames -= 1
+            if not self._intro_done:
+                self._intro_t += dt
+                elapsed = self._intro_t
 
-                # 头部微微晃动
-                self.model.SetParameterValue("ParamAngleX", math.sin(mt * 0.001) * 0.001, 0.001)
-                self.model.SetParameterValue("ParamAngleY", math.sin(mt * 0.001) * 0.001, 0.001)
-                self.model.SetParameterValue("ParamAngleZ", math.sin(mt * 0.001) * 0.001, 0.001)
+                if elapsed >= INTRO_DURATION:
+                    self._intro_done = True
+                else:
+                    # fade：开场=1.0，尾声=0.0
+                    fade = 1.0 if elapsed < FADE_START else max(0.0, 1.0 - (elapsed - FADE_START) / (INTRO_DURATION - FADE_START))
 
-                # 身体整体左右摇晃
-                self.model.SetParameterValue("ParamBodyAngleX", math.sin(mt * 5) * 0.5, 0.04)
+                    # ── 1. 眨眼睛：开场后约 0.5s 执行一次 ──
+                    if not self._intro_blink_done and elapsed >= 0.5:
+                        self._intro_blink_done = True
+                        self.model.SetParameterValue("ParamEyeLOpen", 0.0, 0.7)
+                        self.model.SetParameterValue("ParamEyeROpen", 0.0, 0.7)
 
-                # 眼睛微动
-                self.model.SetParameterValue("ParamEyeBallX", math.sin(mt * 0.001) * 0.001, 0.001)
-                self.model.SetParameterValue("ParamEyeBallY", math.sin(mt * 0.001) * 0.001, 0.001)
-            elif self._intro_frames == 0:
-                # 播放完毕后重置所有开场动画参数到0，恢复初始状态
-                self.model.SetParameterValue("ParamAngleX", 0.0, 1.0)
-                self.model.SetParameterValue("ParamAngleY", 0.0, 1.0)
-                self.model.SetParameterValue("ParamAngleZ", 0.0, 1.0)
-                self.model.SetParameterValue("ParamBodyAngleX", 0.0, 1.0)
-                self.model.SetParameterValue("ParamEyeBallX", 0.0, 1.0)
-                self.model.SetParameterValue("ParamEyeBallY", 0.0, 1.0)
-                self._intro_frames = -1
+                    # ── 2. 张嘴微笑 + 眼笑 ──
+                    mouth_open = (0.15 + math.sin(elapsed * math.pi * 1.5) * 0.08) * fade
+                    self.model.SetParameterValue("ParamMouthOpenY", mouth_open, 0.5 * fade + 0.01)
+                    self.model.SetParameterValue("ParamEyeLSmile", 0.4 * fade, 0.4 * fade + 0.01)
+                    self.model.SetParameterValue("ParamEyeRSmile", 0.4 * fade, 0.4 * fade + 0.01)
+                    self.model.SetParameterValue("ParamMouthForm", 0.5 * fade, 0.5 * fade + 0.01)
 
             # 设置口型参数 (嘴唇张合)
             self.model.SetParameterValue(StandardParams.ParamMouthOpenY, self.mouth_open)

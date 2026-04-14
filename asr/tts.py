@@ -17,8 +17,8 @@ import time
 
 from abc import ABC, abstractmethod
 
-from config import TTS_CONFIG
-from emotion import EmotionTrigger
+from llm.config import TTS_CONFIG
+from asr.emotion import EmotionTrigger
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -378,7 +378,7 @@ class TTS:
 
     def end_turn(self):
         """
-        标记本轮对话结束：当 LLM 回答完毕后调用。
+        标记本轮对话结束：当 llm 回答完毕后调用。
         这样当前队列里剩余的句子播完后，会等待 1000ms 再触发 on_turn_complete。
         """
         self._turn_ended = True

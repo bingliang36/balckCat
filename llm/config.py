@@ -2,7 +2,7 @@
 配置文件 - 包含所有 API 配置
 """
 
-# LLM (豆包) 配置
+# llm (豆包) 配置
 LLM_CONFIG = {
     "api_key": "e9f4b7cb-88c4-4a58-b1fc-d5b62fb8d319",
     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
@@ -54,7 +54,7 @@ TTS_CONFIG = {
 }
 
 # Live2D 模型路径
-MODEL_PATH = "blackCat/黑猫/黑猫.model3.json"
+MODEL_PATH = "../blackCat/黑猫/黑猫.model3.json"
 
 # 窗口默认大小
 WINDOW_WIDTH = 500

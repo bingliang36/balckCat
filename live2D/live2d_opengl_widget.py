@@ -1,6 +1,6 @@
 """
 Live2D OpenGL 渲染组件
-集成了 LLM、TTS、情绪检测、口型同步
+集成了 llm、TTS、情绪检测、口型同步
 """
 
 from PyQt5.QtWidgets import QOpenGLWidget
@@ -12,9 +12,9 @@ from time import time
 import live2d.v3 as live2d
 from live2d.v3 import StandardParams
 
-from llm import LLMClient
-from tts import TTS
-from emotion import EmotionDetector, parse_emotion_from_text
+from llm.llm import LLMClient
+from asr.tts import TTS
+from asr.emotion import EmotionDetector, parse_emotion_from_text
 
 
 class Live2DOpenGLWidget(QOpenGLWidget):
@@ -29,7 +29,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self.model = None
         self.last_time = None
 
-        # LLM / TTS / 情绪检测
+        # llm / TTS / 情绪检测
         self.llm = LLMClient()
         self.emotion_detector = EmotionDetector()
         self.tts = TTS(
@@ -64,7 +64,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         live2d.glInit()
 
         # 加载模型
-        from config import MODEL_PATH
+        from llm.config import MODEL_PATH
         self.model = live2d.LAppModel()
         self.model.LoadModelJson(MODEL_PATH)
         self.model.Resize(self.width(), self.height())
@@ -137,11 +137,11 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
     def send_message(self, text: str):
         """
-        用户发送消息 → LLM (流式) → TTS (逐句触发) + 情绪检测
+        用户发送消息 → llm (流式) → TTS (逐句触发) + 情绪检测
         """
         print(f"[chat] 用户: {text}")
 
-        # 流式 LLM：逐句触发 TTS，最终回调用于情绪检测
+        # 流式 llm：逐句触发 TTS，最终回调用于情绪检测
         self.llm.ask(
             text,
             callback=self._on_llm_response,
@@ -150,7 +150,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
     def _on_llm_chunk(self, sentence: str):
         """
-        LLM 流式句子回调 — 解析情绪触发点，送 TTS 播放
+        llm 流式句子回调 — 解析情绪触发点，送 TTS 播放
         """
         print(f"[chat] 助手 (句): {sentence}")
 
@@ -162,7 +162,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self.tts.speak_async(result.clean_text, result.triggers)
 
     def _on_llm_response(self, error, reply: str):
-        """LLM 完成回调 — 通知 TTS 本轮结束，播完后会还原表情"""
+        """llm 完成回调 — 通知 TTS 本轮结束，播完后会还原表情"""
         if error:
             print(f"[llm] 错误: {error}")
             return

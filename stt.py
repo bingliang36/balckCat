@@ -98,13 +98,11 @@ class STTController(QObject):
         original_stop = self.recorder.stop_recording
 
         def wrap_start():
-            print("[STT] F8 按下，开始录音")
             self.is_recording_event.set()
             self.recording_state_changed.emit(True)
             original_start()
 
         def wrap_stop():
-            print("[STT] F8 松开，停止录音")
             original_stop()
             self.is_recording_event.clear()
             self.recording_state_changed.emit(False)
@@ -112,7 +110,6 @@ class STTController(QObject):
         self.recorder.start_recording = wrap_start
         self.recorder.stop_recording = wrap_stop
 
-        print("[STT] 启动 pynput 键盘监听...")
         try:
             self.recorder.start()
         except Exception as e:

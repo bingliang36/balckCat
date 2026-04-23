@@ -55,7 +55,7 @@ class LLMClient:
 
             full_response = ""
             buffer = ""  # 凑 buffer 用
-            MIN_CHUNK = 5  # 凑满 N 字就送 TTS，不管是否完整
+            MIN_CHUNK = 7  # 凑满 N 字就送 TTS，不管是否完整
             first_chunk_time = None  # 收到第一个字的时间
             tts_first_chunk_time = None  # 触发 TTS 第一段的时间
             # 颜文字还没接收完整（括号不成对）时不截断

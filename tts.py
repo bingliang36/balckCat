@@ -519,6 +519,9 @@ class TTS:
                 clock.tick(30)
                 if self.on_amplitude:
                     self.on_amplitude(0.4 + _random.random() * 0.4)
+            # 播放结束，闭嘴
+            if self.on_amplitude:
+                self.on_amplitude(0.0)
             self._pygame.mixer.music.unload()
             done_t = time.time()
             print(f'[tts] 播放完成  音频大小={len(audio_bytes)/1024:.1f}KB  加载={load_t-t0:.2f}s  播放={done_t-play_start:.2f}s  总计={done_t-t0:.2f}s')

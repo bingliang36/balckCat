@@ -31,6 +31,18 @@ class Live2DWindow(QWidget):
         self._prev_drag_pos: QPoint = None
         self._prev_drag_time: float = None
         self._scale = 1.0  # 当前缩放比例
+        # 惯性平滑参数
+        self._inertia_x = 0.0
+        self._inertia_y = 0.0
+        self.INERTIA_SCALE = 0.3
+        self.MAX_INERTIA = 30.0
+        self.ALPHA = 0.15  # 低通滤波系数，越小越平滑但响应越慢
+        # 眼珠追踪参数
+        self._eye_track_x = 0.0  # 平滑后的眼珠X
+        self._eye_track_y = 0.0  # 平滑后的眼珠Y
+        self._mouse_near_model = False  # 鼠标是否在模型附近
+        self.EYE_SCALE = 1.5  # 眼珠追踪灵敏度
+        self.EYE_ALPHA = 0.12  # 眼珠平滑系数
 
         # 安装事件过滤器，统一处理鼠标事件
         self.opengl_widget.installEventFilter(self)
@@ -57,16 +69,18 @@ class Live2DWindow(QWidget):
                 from time import time as _t
                 self._prev_drag_time = _t()
 
-                # 模型交互：使用区域检测代替 HitTest
-                # 模型大约占窗口上半部分（头部在中上部，身体在下半部）
+                # 眼珠追踪：按下时检测是否在模型附近，决定是否开启追踪
                 if self.live2d_widget.model:
                     w = self.opengl_widget.width()
                     h = self.opengl_widget.height()
                     lx = local_pos.x()
                     ly = local_pos.y()
+                    # 模型区域：占窗口上半部分偏中
+                    in_model_area = (h * 0.1 <= ly <= h * 0.85)
+                    self._mouse_near_model = in_model_area
 
-                    # 粗略区域判断：头部大约在窗口上半部分偏中
-                    # 身体在窗口下半部分
+                    # 模型交互：使用区域检测代替 HitTest
+                    # 模型大约占窗口上半部分（头部在中上部，身体在下半部）
                     in_head = (h * 0.1 <= ly <= h * 0.7)
                     in_body = (ly > h * 0.5)
 
@@ -88,10 +102,37 @@ class Live2DWindow(QWidget):
 
         # 左键拖动
         if etype == QEvent.MouseMove:
+            local_pos = event.pos()
+            w = self.opengl_widget.width()
+            h = self.opengl_widget.height()
+            lx = local_pos.x()
+            ly = local_pos.y()
+
+            # 眼珠追踪：鼠标在模型附近时，眼球跟随鼠标
+            if self.live2d_widget.model:
+                in_model_area = (h * 0.1 <= ly <= h * 0.85)
+                if in_model_area:
+                    # 以模型中心为原点，范围映射到 [-1, 1]
+                    model_cx = w * 0.5
+                    model_cy = h * 0.4
+                    nx = (lx - model_cx) / (w * 0.5)
+                    ny = (ly - model_cy) / (h * 0.4)
+                    # 限制范围
+                    nx = max(-1.0, min(1.0, nx))
+                    ny = max(-1.0, min(1.0, ny))
+                    # 低通滤波平滑
+                    target_x = nx * self.EYE_SCALE
+                    target_y = ny * self.EYE_SCALE
+                    self._eye_track_x = self._eye_track_x + self.EYE_ALPHA * (target_x - self._eye_track_x)
+                    self._eye_track_y = self._eye_track_y + self.EYE_ALPHA * (target_y - self._eye_track_y)
+                    self.live2d_widget.model.SetParameterValue("ParamEyeBallX", self._eye_track_x)
+                    self.live2d_widget.model.SetParameterValue("ParamEyeBallY", self._eye_track_y)
+
             if event.buttons() == Qt.LeftButton and self._drag_position:
                 self.move(event.globalPos() - self._drag_position)
 
                 # 物理惯性：拖拽时计算窗口移动速度，施加给模型的 physics 参数
+                # 使用低通滤波平滑，避免生硬抖动
                 if self.live2d_widget.model and self._prev_drag_pos is not None:
                     from time import time as _t
                     curr_time = _t()
@@ -100,9 +141,13 @@ class Live2DWindow(QWidget):
                         curr_pos = event.globalPos()
                         dx = (curr_pos.x() - self._prev_drag_pos.x()) / dt  # 像素/秒
                         dy = (curr_pos.y() - self._prev_drag_pos.y()) / dt
-                        # 施加惯性力：让头发/尾巴/饰品随拖拽方向摆动
-                        self.live2d_widget.model.AddParameterValue("ParamAngleX", dx * 0.001)
-                        self.live2d_widget.model.AddParameterValue("ParamAngleY", -dy * 0.001)
+                        # 限制范围后，用低通滤波平滑
+                        target_vx = max(-self.MAX_INERTIA, min(self.MAX_INERTIA, dx * self.INERTIA_SCALE))
+                        target_vy = max(-self.MAX_INERTIA, min(self.MAX_INERTIA, -dy * self.INERTIA_SCALE))
+                        self._inertia_x = self._inertia_x + self.ALPHA * (target_vx - self._inertia_x)
+                        self._inertia_y = self._inertia_y + self.ALPHA * (target_vy - self._inertia_y)
+                        self.live2d_widget.model.SetParameterValue("ParamAngleX", self._inertia_x)
+                        self.live2d_widget.model.SetParameterValue("ParamAngleY", self._inertia_y)
                     self._prev_drag_pos = event.globalPos()
                     self._prev_drag_time = curr_time
 
@@ -110,6 +155,16 @@ class Live2DWindow(QWidget):
 
         # 左键释放
         if etype == QEvent.MouseButtonRelease:
+            # 松手后将物理参数设为0，靠物理系统的内建恢复力自然回弹
+            if self.live2d_widget.model:
+                self.live2d_widget.model.SetParameterValue("ParamAngleX", 0.0)
+                self.live2d_widget.model.SetParameterValue("ParamAngleY", 0.0)
+                self.live2d_widget.model.SetParameterValue("ParamEyeBallX", 0.0)
+                self.live2d_widget.model.SetParameterValue("ParamEyeBallY", 0.0)
+            self._inertia_x = 0.0
+            self._inertia_y = 0.0
+            self._eye_track_x = 0.0
+            self._eye_track_y = 0.0
             self._drag_position = None
             self._prev_drag_pos = None
             self._prev_drag_time = None

@@ -6,7 +6,7 @@
 LLM_CONFIG = {
     "api_key": "e9f4b7cb-88c4-4a58-b1fc-d5b62fb8d319",
     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
-    "model": "doubao-seed-2-0-mini-260215",
+    "model": "doubao-seed-character-251128",
     "max_tokens": 200,
     "system_prompt": (
         "你是一个可爱的虚拟猫娘，性格温柔、活泼、有点小俏皮、会撒娇\n"
@@ -26,7 +26,7 @@ LLM_CONFIG = {
         "  用户说\"中了500万！\"\n"
         "  你回复：\"哇真的吗！太棒了吧！【happy】(◕ᴗ◕)♪\"\n"
         "注意：颜文字要紧跟在相关情绪的词语后面，标签放在句子末尾【】里，每句话都要有情绪标签\n"
-        "回复文本不要超过50字"
+        "回复文本不要超过50字，并且颜文字要严格遵守提示词中给出的颜文字，不得自己随便生成其他的颜文字"
     ),
 }
 
@@ -59,3 +59,15 @@ MODEL_PATH = "blackCat/黑猫/黑猫.model3.json"
 # 窗口默认大小
 WINDOW_WIDTH = 500
 WINDOW_HEIGHT = 700
+
+# STT 配置
+STT_CONFIG = {
+    "ptt_key": "f8",                        # PTT 按键，支持 "f8", "f9", "r" 等
+    "samplerate": 44100,                    # 采样率
+    "channels": 1,                          # 通道数（mono）
+    "min_recording_duration": 1.0,          # 最短录音时长（秒）
+    "cooldown_period": 0.5,                 # 录音冷却时间（秒）
+    "model_dir": "D:/pythonCode/PythonProject9/SenseVoiceSmall",  # 本地模型目录
+    "device": "cpu",                    # 运行设备，"cuda:0" 或 "cpu"
+    "enable_print": True,                   # 是否打印日志
+}

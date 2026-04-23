@@ -9,7 +9,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 from live2d_widget import Live2DWindow
-from config import WINDOW_WIDTH, WINDOW_HEIGHT
+from stt import STTController
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, STT_CONFIG
 
 
 def main():
@@ -28,6 +29,11 @@ def main():
     # 创建聊天输入窗口
     chat_window = ChatWindow(pet_window.live2d_widget)
     chat_window.show()
+
+    # 创建 STT 控制器（按键录音 + SenseVoice 转写）
+    stt_controller = STTController(pet_window.live2d_widget, STT_CONFIG)
+    stt_controller.recording_state_changed.connect(chat_window.on_recording_state_changed)
+    stt_controller.start()
 
     sys.exit(app.exec_())
 
@@ -115,6 +121,15 @@ class ChatWindow(QWidget):
         if text:
             self.live2d_widget.send_message(text)
             self.input_box.clear()
+
+    def on_recording_state_changed(self, is_recording: bool):
+        """录音状态变化时的回调"""
+        if is_recording:
+            self.send_btn.setText("录音中...")
+            self.send_btn.setEnabled(False)
+        else:
+            self.send_btn.setText("发送")
+            self.send_btn.setEnabled(True)
 
 
 if __name__ == "__main__":

@@ -161,7 +161,6 @@ class PTTAudioRecorder:
         """比较按键是否匹配，处理字符串和 Key 枚举的差异"""
         if key == self.record_key:
             return True
-        # 字符串比较
         if isinstance(self.record_key, str):
             key_name = getattr(key, 'name', None) or getattr(key, 'char', None)
             return key_name == self.record_key or str(key) == self.record_key

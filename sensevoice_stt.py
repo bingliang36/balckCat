@@ -29,6 +29,7 @@ class SenseVoiceSTT:
         vad_model: str = "speech_fsmn_vad_zh-cn-16k-common-pytorch",
         device: str = "cuda:0",
         enable_print: bool = True,
+        delete_audio: bool = True,
     ):
         """
         Args:
@@ -56,6 +57,7 @@ class SenseVoiceSTT:
         self.vad_model_path = vad_model  # VAD 使用模型标识符，让 funasr 自动下载
         self.device = device
         self.enable_print = enable_print
+        self.delete_audio = delete_audio
 
         # 中断状态
         self.was_interrupted = False
@@ -150,6 +152,14 @@ class SenseVoiceSTT:
                 text = self.transcribe(audio_path)
                 if self.enable_print:
                     print(f"[STT] 结果: {text}")
+
+                # 删除录音文件
+                if self.delete_audio:
+                    try:
+                        os.remove(audio_path)
+                    except Exception as e:
+                        if self.enable_print:
+                            print(f"[STT] 删除录音文件失败: {e}")
 
                 # 放入输出队列
                 self.stt_text_queue.put(text)

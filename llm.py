@@ -1,5 +1,5 @@
 """
-llm 模块 - 豆包云端模型 (OpenAI 兼容接口)
+LLM 模块 - 豆包云端模型 (OpenAI 兼容接口)
 支持流式输出，逐句触发回调
 """
 
@@ -9,7 +9,7 @@ from config import LLM_CONFIG
 
 
 class LLMClient:
-    """豆包 llm 客户端 (流式)"""
+    """豆包 LLM 客户端 (流式)"""
 
     def __init__(self):
         self.client = OpenAI(
@@ -26,7 +26,7 @@ class LLMClient:
 
     def ask(self, text: str, callback=None, chunk_callback=None):
         """
-        发送消息给 llm，流式接收
+        发送消息给 LLM，流式接收
         callback:        最终完成回调，接收 (error, full_response)
         chunk_callback:  逐句/逐词回调，接收完整句子的字符串
                          用于流式触发 TTS

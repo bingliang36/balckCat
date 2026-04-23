@@ -6,9 +6,10 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
-from live2D.live2d_widget import Live2DWindow
-from llm.config import WINDOW_WIDTH, WINDOW_HEIGHT
+from live2d_widget import Live2DWindow
+from config import WINDOW_WIDTH, WINDOW_HEIGHT
 
 
 def main():
@@ -106,7 +107,7 @@ class ChatWindow(QWidget):
 
         self.adjustSize()
         # 放在宠物窗口右侧
-        from llm.config import WINDOW_WIDTH
+        from config import WINDOW_WIDTH
         self.move(120 + WINDOW_WIDTH, 100)
 
     def _on_send(self):

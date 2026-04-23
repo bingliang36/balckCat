@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QMenu, QMessageBox
 from PyQt5.QtCore import Qt, QPoint, QEvent
-from PyQt5.QtGui import QCursor
-from live2D.live2d_opengl_widget import Live2DOpenGLWidget
+from PyQt5.QtGui import QCursor, QIcon
+from live2d_opengl_widget import Live2DOpenGLWidget
 
 
 class Live2DWindow(QWidget):
@@ -19,7 +19,7 @@ class Live2DWindow(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_NoSystemBackground)
 
-        from llm.config import WINDOW_WIDTH, WINDOW_HEIGHT
+        from config import WINDOW_WIDTH, WINDOW_HEIGHT
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
 
         self.opengl_widget = Live2DOpenGLWidget(self)
@@ -124,7 +124,7 @@ class Live2DWindow(QWidget):
                 if new_scale != self._scale:
                     self._scale = new_scale
                     old_center = self.geometry().center()
-                    from llm.config import WINDOW_WIDTH, WINDOW_HEIGHT
+                    from config import WINDOW_WIDTH, WINDOW_HEIGHT
                     new_w = max(200, min(1400, int(WINDOW_WIDTH * self._scale)))
                     new_h = max(280, min(1400, int(WINDOW_HEIGHT * self._scale)))
                     self.resize(new_w, new_h)

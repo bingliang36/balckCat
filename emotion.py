@@ -1,6 +1,6 @@
 """
-情绪检测模块 - 基于 llm 输出的情绪标记 + 颜文字解析
-不再做推理，直接解析 llm 输出中的情绪标记和颜文字
+情绪检测模块 - 基于 LLM 输出的情绪标记 + 颜文字解析
+不再做推理，直接解析 LLM 输出中的情绪标记和颜文字
 """
 
 import re
@@ -98,7 +98,7 @@ class EmotionParseResult:
 
 def parse_emotion_from_text(text: str) -> EmotionParseResult:
     """
-    解析 llm 输出文本，提取：
+    解析 LLM 输出文本，提取：
     - clean_text：去掉所有情绪标记和颜文字后的纯净文本（供 TTS 朗读）
     - triggers：情绪触发点列表（字符位置 + 对应表情名）
 

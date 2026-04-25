@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QMenu, QMessageBox
 from PyQt5.QtCore import Qt, QPoint, QEvent
-from PyQt5.QtGui import QCursor, QIcon
+from PyQt5.QtGui import QCursor
 from .opengl_widget import Live2DOpenGLWidget
 
 

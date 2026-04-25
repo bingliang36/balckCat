@@ -3,8 +3,7 @@ MemNet 记忆客户端
 封装 memories（存储）、recall（回忆）、关键词提取
 """
 
-import threading
-from typing import List, Optional
+from typing import List
 
 from memnetai.basics.request.memnetai_client import MemNetAIClient
 from memnetai.basics.request.message.message import Message

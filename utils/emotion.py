@@ -39,8 +39,12 @@ EMOTICON_EMOTION_MAP = {
     # 惊讶
     "(°ー°〃)":  "surprised",
     "Σ(°△°|||)": "surprised",
-    # 害羞
+    # 害羞（颜文字中的斜杠有全角／和半角/两种变体，*为可选的星号装饰）
     "(／ω＼)":  "embarrassed",
+    "(/ω＼)":   "embarrassed",   # 半角斜杠变体
+    "(ω＼)":   "embarrassed",    # 无斜杠变体（常见于LLM输出）
+    "(*/ω＼*)": "embarrassed",   # 带星号装饰 + 半角斜杠
+    "(*／ω＼*)": "embarrassed",  # 带星号装饰 + 全角斜杠
     "(≿⁠㏨⁠)":  "embarrassed",
 }
 

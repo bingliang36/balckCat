@@ -9,8 +9,8 @@ from threading import Event
 
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
-from audio_recorder import PTTAudioRecorder
-from sensevoice_stt import SenseVoiceSTT
+from .audio_recorder import PTTAudioRecorder
+from .sensevoice_stt import SenseVoiceSTT
 
 
 class STTController(QObject):

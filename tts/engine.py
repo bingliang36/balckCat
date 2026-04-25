@@ -18,7 +18,7 @@ import time
 from abc import ABC, abstractmethod
 
 from config import TTS_CONFIG
-from emotion import EmotionTrigger
+from utils.emotion import EmotionTrigger
 
 
 # ══════════════════════════════════════════════════════════════════════════════

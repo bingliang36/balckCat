@@ -8,8 +8,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLi
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
-from live2d_widget import Live2DWindow
-from stt import STTController
+from live2d_ui.window import Live2DWindow
+from stt.controller import STTController
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, STT_CONFIG
 
 

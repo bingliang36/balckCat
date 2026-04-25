@@ -1,0 +1,1 @@
+# Live2D module placeholder - actual live2d库通过系统安装

@@ -1,6 +1,7 @@
 """
 Live2D OpenGL 渲染组件
 集成了 LLM、TTS、情绪检测、口型同步
+支持视觉工具（look_screen, look_camera）
 """
 
 from PyQt5.QtWidgets import QOpenGLWidget
@@ -12,9 +13,10 @@ from time import time
 import live2d.v3 as live2d
 from live2d.v3 import StandardParams
 
-from llm import LLMClient
-from tts import TTS
-from emotion import EmotionDetector, parse_emotion_from_text
+from llm.client import LLMClient
+from tts.engine import TTS
+from utils.emotion import EmotionDetector, parse_emotion_from_text
+from tools import TOOL_DEFINITIONS  # 视觉工具定义
 
 
 class Live2DOpenGLWidget(QOpenGLWidget):
@@ -31,6 +33,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
         # LLM / TTS / 情绪检测
         self.llm = LLMClient()
+        self.llm.set_tools(TOOL_DEFINITIONS)  # 注册视觉工具
         self.emotion_detector = EmotionDetector()
         self.tts = TTS(
             on_amplitude=self._on_amplitude,
@@ -138,12 +141,15 @@ class Live2DOpenGLWidget(QOpenGLWidget):
     def send_message(self, text: str):
         """
         用户发送消息 → LLM (流式) → TTS (逐句触发) + 情绪检测
+        支持视觉工具调用（look_screen, look_camera）
         """
         print(f"[chat] 用户: {text}")
 
-        # 流式 LLM：逐句触发 TTS，最终回调用于情绪检测
-        self.llm.ask(
+        # 使用带工具的 LLM 调用
+        # ask_with_tools 内部处理工具调用，最终回复通过 callback 返回
+        self.llm.ask_with_tools(
             text,
+            tools=TOOL_DEFINITIONS,
             callback=self._on_llm_response,
             chunk_callback=self._on_llm_chunk
         )

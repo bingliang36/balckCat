@@ -60,6 +60,15 @@ MODEL_PATH = "blackCat/黑猫/黑猫.model3.json"
 WINDOW_WIDTH = 500
 WINDOW_HEIGHT = 700
 
+# MemNet AI 记忆配置
+MEMNET_CONFIG = {
+    "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",          # MemNet AI API Key
+    "base_url": "https://api.memnetai.com",
+    "memory_agent_name": "deskpet",     # 记忆体名称
+    "namespace": "blackcat",            # 命名空间
+    "character": "小黑",               # 角色名（assistant 时使用）
+}
+
 # STT 配置
 STT_CONFIG = {
     "ptt_key": "f8",                        # PTT 按键，支持 "f8", "f9", "r" 等

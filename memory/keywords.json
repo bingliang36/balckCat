@@ -1,0 +1,194 @@
+[
+  {
+    "keyword": "小橘喵",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "用户",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "喵呜子",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "小黑猫",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "名字",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "助手",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "屏幕",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "猫娘",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "聊天",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "小黑猫娘",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "星喵",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "高兴",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "认识",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "小黑",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "你好",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "之前",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "记得",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "食物",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "喜好",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "牛奶",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "小黑",
+    "role": "assistant",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "疑惑",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "小黑",
+    "role": "assistant",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "AI助手",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "小黑",
+    "role": "assistant",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "开心",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "小黑",
+    "role": "assistant",
+    "last_seen": "2026-04-25"
+  },
+  {
+    "keyword": "喜欢",
+    "memory_agent": "deskpet",
+    "namespace": "blackcat",
+    "character": "用户",
+    "role": "user",
+    "last_seen": "2026-04-25"
+  }
+]

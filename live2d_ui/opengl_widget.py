@@ -17,6 +17,7 @@ from llm.client import LLMClient
 from tts.engine import TTS
 from utils.emotion import EmotionDetector, parse_emotion_from_text
 from tools import TOOL_DEFINITIONS  # 视觉工具定义
+from memory import MemoryClient, KeywordManager  # 记忆模块
 
 
 class Live2DOpenGLWidget(QOpenGLWidget):
@@ -44,6 +45,12 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         # 口型同步
         self.mouth_open = 0.0  # 0.0 ~ 1.0
         self.target_mouth_open = 0.0
+
+        # 记忆模块
+        self.memory_client = MemoryClient()
+        self.keyword_manager = KeywordManager()
+        self._last_user_text = ""     # 最近一次用户输入
+        self._last_assistant_text = ""  # 最近一次AI回复
 
         # 渲染定时器
         self.timer = QTimer(self)
@@ -140,13 +147,26 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
     def send_message(self, text: str):
         """
-        用户发送消息 → LLM (流式) → TTS (逐句触发) + 情绪检测
+        用户发送消息 → 关键词命中检测 → recall 拼装 → LLM (流式) → TTS + 情绪
         支持视觉工具调用（look_screen, look_camera）
         """
         print(f"[chat] 用户: {text}")
 
+        # 保存用户输入，对话结束后用于异步存储 + 关键词提取
+        self._last_user_text = text
+
+        # 关键词命中检测 → recall 记忆拼装
+        matched = self.keyword_manager.match(text)
+        print(f"[memory] 关键词命中: {[(m.keyword, m.role) for m in matched]}")
+        if matched:
+            # 用第一个命中关键词查记忆
+            recall_text = self.memory_client.recall(matched[0].keyword)
+            print(f"[memory] recall 返回: {repr(recall_text)}")
+            if recall_text:
+                text = text + "\n[相关记忆] " + recall_text
+                print(f"[memory] 拼装记忆后: {text[:100]}")
+
         # 使用带工具的 LLM 调用
-        # ask_with_tools 内部处理工具调用，最终回复通过 callback 返回
         self.llm.ask_with_tools(
             text,
             tools=TOOL_DEFINITIONS,
@@ -162,18 +182,60 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
         # 解析文本中的情绪标记和颜文字，提取纯净文本 + 触发点
         result = parse_emotion_from_text(sentence)
-        print(f"[emotion] 纯净文本: {result.clean_text}  触发点: {[(t.char_pos, t.expression_name) for t in result.triggers]}")
+        print(f"[emotion] 解析结果  句: {repr(sentence[:30])}")
+        print(f"[emotion] 纯净文本: {repr(result.clean_text[:30])}  触发点: {[(t.char_pos, t.expression_name) for t in result.triggers]}")
+        print(f"[emotion] 送TTS  clean: {repr(result.clean_text)}  triggers: {[(t.char_pos, t.expression_name) for t in result.triggers]}")
 
         # 立即送 TTS 播放（异步不阻塞），带上情绪触发点
-        self.tts.speak_async(result.clean_text, result.triggers)
+        print(f"[tts] speak_async  raw={repr(sentence[:40])}  clean={repr(result.clean_text[:40])}  triggers={[(t.char_pos, t.expression_name) for t in result.triggers]}")
+        if result.clean_text.strip():
+            self.tts.speak_async(result.clean_text, result.triggers)
+        elif result.triggers:
+            # 纯净文本为空但有情绪触发点（整段都是颜文字/标签），立即触发表情
+            print(f"[tts] 空文本触发情绪: {result.triggers[0].expression_name}")
+            if self.model:
+                self.model.ResetExpression()
+                self.model.SetExpression(result.triggers[0].expression_name)
+        else:
+            print(f"[tts] 跳过（无文本无情绪）")
 
     def _on_llm_response(self, error, reply: str):
-        """LLM 完成回调 — 通知 TTS 本轮结束，播完后会还原表情"""
+        """LLM 完成回调 — 通知 TTS 本轮结束，异步存储记忆 + 提取关键词"""
         if error:
             print(f"[llm] 错误: {error}")
             return
         print(f"[chat] 助手 (完毕): {reply}")
+        self._last_assistant_text = reply
+
+        # 对话结束后，异步存储记忆 + 提取关键词
+        self._async_store_memory()
+
         self.tts.end_turn()
+
+    def _async_store_memory(self):
+        """同步：提取关键词+摘要 → 异步线程：存 MemNet + 更新本地索引"""
+        import threading
+        from memnetai.basics.request.message.message import Message
+        from config import MEMNET_CONFIG
+
+        # 同步提取（阻塞当前线程，但很快），得到摘要填入 metadata
+        _keywords, summary = self.keyword_manager.update_and_get(
+            self._last_user_text, self._last_assistant_text
+        )
+        if not summary:
+            summary = self._last_user_text[:50]
+
+        def _do():
+            try:
+                messages = [
+                    Message(role="user", content=self._last_user_text, character="用户"),
+                    Message(role="assistant", content=self._last_assistant_text, character=MEMNET_CONFIG["character"]),
+                ]
+                self.memory_client.store(messages, metadata=summary, async_mode=1)
+            except Exception as e:
+                print(f"[memory] 异步存储失败: {e}")
+
+        threading.Thread(target=_do, daemon=True).start()
 
     def _on_turn_complete(self):
         """TTS 本轮所有句子播完后回调 — 还原到默认表情"""

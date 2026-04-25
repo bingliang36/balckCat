@@ -16,6 +16,8 @@ EMOTION_EXPRESSION_MAP = {
     "sad":         "expression5",   # yanlei
     "surprised":   "expression3",   # quanquanyan
     "embarrassed": "expression6",   # lianhong
+    "neutral":     "expression3",   # 中性用惊讶代替
+    "疑惑":        "expression3",
 }
 
 
@@ -54,11 +56,22 @@ EMOTICON_EMOTION_MAP = {
 # ══════════════════════════════════════════════════════════════════════════════
 
 LABEL_EMOTION_MAP = {
+    # 英文标签（系统提示词规定用这个）
     "【happy】":       "happy",
     "【angry】":       "angry",
     "【sad】":         "sad",
     "【surprised】":   "surprised",
     "【embarrassed】": "embarrassed",
+    # 中文标签（模型有时会输出这个，不符合提示词但也要兼容）
+    "【开心】":        "happy",
+    "【生气】":        "angry",
+    "【伤心】":        "sad",
+    "【惊讶】":        "surprised",
+    "【害羞】":        "embarrassed",
+    "【中性】":        "neutral",
+    "【疑惑】":        "surprised",
+    "【无奈】":        "sad",
+    "【委屈】":        "sad",
 }
 
 

@@ -191,3 +191,182 @@ class PTTAudioRecorder:
         self.listener = Listener(on_press=self.on_press, on_release=self.on_release)
         with self.listener:
             self.listener.join()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VAD 连续语音检测录音器
+# ─────────────────────────────────────────────────────────────────────────────
+
+class VADRecorder:
+    """
+    连续 VAD 录音器：无需按键，开口说话自动录音，静默自动发送
+    能量阈值检测语音起止，适合游戏等场景
+    """
+
+    def __init__(
+        self,
+        recording_filename_queue,
+        samplerate: int = 44100,
+        channels: int = 1,
+        speech_threshold: float = 0.01,
+        silence_threshold: float = 0.003,
+        start_frames: int = 3,
+        end_frames: int = 40,
+        silence_time: float = 1.5,
+        min_recording_duration: float = 0.5,
+        enable_print: bool = True,
+        # 回调，由 STTController 注入
+        on_speech_start=None,
+        on_speech_end=None,
+    ):
+        self.recording_filename_queue = recording_filename_queue
+        self.samplerate = samplerate
+        self.channels = channels
+        self.speech_threshold = speech_threshold
+        self.silence_threshold = silence_threshold
+        self.start_frames = start_frames
+        self.end_frames = end_frames
+        self.silence_time = silence_time
+        self.min_recording_duration = min_recording_duration
+        self.enable_print = enable_print
+
+        # 外部回调
+        self.on_speech_start = on_speech_start or (lambda: None)
+        self.on_speech_end = on_speech_end or (lambda _: None)
+
+        self.stream = None
+        self.is_recording = False
+        self.recording_data = []
+        self._running = False
+
+        # 状态计数
+        self._consecutive_speech = 0   # 连续语音帧计数
+        self._consecutive_silence = 0  # 连续静默帧计数
+        self._speech_start_time = 0.0  # 语音开始时间（检测到的那一刻）
+
+        os.makedirs("temps", exist_ok=True)
+        self.recording_filename = GetFilename("temps/recording_", ".wav")
+
+    def _rms(self, data):
+        """计算音频帧的 RMS 能量"""
+        import numpy as np
+        return np.sqrt(np.mean(data.astype(np.float32) ** 2))
+
+    def _start_recording(self):
+        """开始录音（内部）"""
+        if self.is_recording:
+            return
+        if self.enable_print:
+            print("\n[VAD] 检测到语音，开始录音...")
+        self.is_recording = True
+        self.recording_data = []
+        self._speech_start_time = time.time()
+        self._consecutive_silence = 0
+        self.on_speech_start()
+
+    def _stop_recording(self):
+        """停止录音并保存（内部）"""
+        if not self.is_recording:
+            return
+        self.is_recording = False
+
+        duration = time.time() - self._speech_start_time
+        if duration < self.min_recording_duration:
+            if self.enable_print:
+                print(f"[VAD] 录音太短 ({duration:.1f}s)，丢弃")
+            return
+
+        if not self.recording_data:
+            return
+
+        import numpy as np
+        from scipy.io.wavfile import write
+        output_file = self.recording_filename.get_filename()
+        write(output_file, self.samplerate, np.concatenate(self.recording_data))
+
+        if self.enable_print:
+            print(f"[VAD] 录音完成: {output_file} ({duration:.1f}s)")
+
+        self.recording_filename_queue.put(output_file)
+        self.on_speech_end(output_file)
+
+    def _audio_loop(self):
+        """音频读取主循环"""
+        import numpy as np
+
+        blocksize = 1024
+        self.stream = sounddevice.InputStream(
+            samplerate=self.samplerate,
+            channels=self.channels,
+            dtype='int16'
+        )
+        self.stream.start()
+
+        print_count = 0
+        while self._running:
+            try:
+                data, _ = self.stream.read(blocksize)
+            except Exception as e:
+                print(f"[VAD] 音频读取错误: {e}")
+                break
+
+            energy = self._rms(data)
+
+            # 每秒打印一次能量值帮助调试
+            print_count += 1
+            if print_count % 43 == 0:
+                print(f"[VAD] energy={energy:.6f}  speech_thresh={self.speech_threshold}  silence_thresh={self.silence_threshold}")
+
+            if self.is_recording:
+                # 录音中：记录数据，检查静默
+                self.recording_data.append(data)
+                if energy < self.silence_threshold:
+                    self._consecutive_silence += 1
+                else:
+                    self._consecutive_silence = 0
+
+                # 连续 N 帧静默 + 超过沉默等待时间
+                if self._consecutive_silence >= self.end_frames:
+                    silence_elapsed = (self._consecutive_silence * blocksize) / self.samplerate
+                    if silence_elapsed >= self.silence_time:
+                        self._stop_recording()
+                        self._consecutive_silence = 0
+                        silence_printed = True
+            else:
+                # 未录音：检查是否开始
+                if energy >= self.speech_threshold:
+                    self._consecutive_speech += 1
+                    if self._consecutive_speech >= self.start_frames:
+                        print(f"[VAD] 触发！能量={energy:.6f}")
+                        self._start_recording()
+                        self._consecutive_speech = 0
+                        silence_printed = False
+                else:
+                    self._consecutive_speech = 0
+                    silence_printed = False
+
+            time.sleep(0.01)
+
+        # 退出时若还在录音则停止
+        if self.is_recording:
+            self._stop_recording()
+
+        try:
+            self.stream.stop()
+            self.stream.close()
+        except Exception:
+            pass
+
+    def start(self):
+        """启动 VAD 录音（会开线程阻塞运行）"""
+        if self.enable_print:
+            print("[VAD] 连续语音检测已启动，开口说话自动录音，静默自动发送")
+        self._running = True
+        thread = threading.Thread(target=self._audio_loop, daemon=True)
+        thread.start()
+
+    def stop(self):
+        """停止 VAD"""
+        self._running = False
+        if self.enable_print:
+            print("[VAD] 已停止")

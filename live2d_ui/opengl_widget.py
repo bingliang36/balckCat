@@ -17,7 +17,7 @@ from llm.client import LLMClient
 from tts.engine import TTS
 from utils.emotion import EmotionDetector, parse_emotion_from_text
 from tools import TOOL_DEFINITIONS  # 视觉工具定义
-from memory import MemoryClient, KeywordManager  # 记忆模块
+from memory import MemoryClient  # 记忆模块（recall 作为工具调用）
 
 
 class Live2DOpenGLWidget(QOpenGLWidget):
@@ -48,7 +48,6 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
         # 记忆模块
         self.memory_client = MemoryClient()
-        self.keyword_manager = KeywordManager()
         self._last_user_text = ""     # 最近一次用户输入
         self._last_assistant_text = ""  # 最近一次AI回复
 
@@ -147,26 +146,15 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
     def send_message(self, text: str):
         """
-        用户发送消息 → 关键词命中检测 → recall 拼装 → LLM (流式) → TTS + 情绪
-        支持视觉工具调用（look_screen, look_camera）
+        用户发送消息 → LLM (工具调用) → TTS + 情绪
+        记忆 recall 作为工具由 LLM 自行判断是否调用
         """
         print(f"[chat] 用户: {text}")
 
-        # 保存用户输入，对话结束后用于异步存储 + 关键词提取
+        # 保存用户输入，对话结束后用于异步存储到 MemNet
         self._last_user_text = text
 
-        # 关键词命中检测 → recall 记忆拼装
-        matched = self.keyword_manager.match(text)
-        print(f"[memory] 关键词命中: {[(m.keyword, m.role) for m in matched]}")
-        if matched:
-            # 用第一个命中关键词查记忆
-            recall_text = self.memory_client.recall(matched[0].keyword)
-            print(f"[memory] recall 返回: {repr(recall_text)}")
-            if recall_text:
-                text = text + "\n[相关记忆] " + recall_text
-                print(f"[memory] 拼装记忆后: {text[:100]}")
-
-        # 使用带工具的 LLM 调用
+        # 使用带工具的 LLM 调用（recall 作为工具之一）
         self.llm.ask_with_tools(
             text,
             tools=TOOL_DEFINITIONS,
@@ -213,17 +201,10 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self.tts.end_turn()
 
     def _async_store_memory(self):
-        """同步：提取关键词+摘要 → 异步线程：存 MemNet + 更新本地索引"""
+        """异步线程：存储对话到 MemNet（不提取关键词，LLM 自己判断何时 recall）"""
         import threading
         from memnetai.basics.request.message.message import Message
         from config import MEMNET_CONFIG
-
-        # 同步提取（阻塞当前线程，但很快），得到摘要填入 metadata
-        _keywords, summary = self.keyword_manager.update_and_get(
-            self._last_user_text, self._last_assistant_text
-        )
-        if not summary:
-            summary = self._last_user_text[:50]
 
         def _do():
             try:
@@ -231,7 +212,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
                     Message(role="user", content=self._last_user_text, character="用户"),
                     Message(role="assistant", content=self._last_assistant_text, character=MEMNET_CONFIG["character"]),
                 ]
-                self.memory_client.store(messages, metadata=summary, async_mode=1)
+                self.memory_client.store(messages, async_mode=1)
             except Exception as e:
                 print(f"[memory] 异步存储失败: {e}")
 

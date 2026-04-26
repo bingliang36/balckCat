@@ -12,7 +12,7 @@ LLM_CONFIG = {
         "你是一个可爱的虚拟猫娘，性格温柔、活泼、有点小俏皮、会撒娇\n"
         "你陪伴在用户的电脑桌面上，随时与用户聊天，你会主动和用户开一些小玩笑，也会倾听用户的心情\n"
         "回复风格：口语化、自然、亲切，可以用哦，呀、呢，~等语气词，还会用颜文字。\n"
-        "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并在合适的地方插入颜文字。\n"
+        "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并且只能在此次对话的最后插入颜文字。\n"
         "情绪标签格式为【happy】【angry】【sad】【surprised】【embarrassed】\n"
         "颜文字对照：\n"
         "  开心/高兴用：(◕ᴗ◕) 或 (≧▽≦) 或 (*^▽^*) 或 (｡◕‿◕｡)\n"
@@ -36,9 +36,9 @@ TTS_CONFIG = {
     "doubao": {
         "enabled": True,
         "api_key": "28b6862d-3d27-458c-81d0-3836c1d804a7",
-        "voice_type": "S_ApRH68lW1",
+        "voice_type": "S_wpRH68lW1",
         "cluster": "volcano_icl",
-        "speed_ratio": 1.3,
+        "speed_ratio": 1.0,
     },
     "local"     : {
       "_comment"      : "本地 vits-simple-api (GPT-SoVITS)",
@@ -71,12 +71,19 @@ MEMNET_CONFIG = {
 
 # STT 配置
 STT_CONFIG = {
+    "mode": "vad",                          # "vad" 连续语音检测，或 "ptt" 按键录音
     "ptt_key": "f8",                        # PTT 按键，支持 "f8", "f9", "r" 等
     "samplerate": 44100,                    # 采样率
     "channels": 1,                          # 通道数（mono）
-    "min_recording_duration": 1.0,          # 最短录音时长（秒）
+    "min_recording_duration": 0.5,          # 最短录音时长（秒）
     "cooldown_period": 0.5,                 # 录音冷却时间（秒）
     "model_dir": "D:/pythonCode/PythonProject9/SenseVoiceSmall",  # 本地模型目录
     "device": "cpu",                    # 运行设备，"cuda:0" 或 "cpu"
     "enable_print": True,                   # 是否打印日志
+    # VAD 参数（mode="vad" 时生效）
+    "vad_speech_threshold": 2500,           # 语音能量阈值（高于此值视为有声音）
+    "vad_silence_threshold": 2000,        # 静默能量阈值（低于此值视为静默）
+    "vad_start_frames": 3,                  # 连续 N 帧高于语音阈值才确认开始
+    "vad_end_frames": 40,                   # 连续 N 帧低于静默阈值才确认结束（约1秒）
+    "silence_time": 1.0,                    # 确认静默后等待 N 秒才发送
 }

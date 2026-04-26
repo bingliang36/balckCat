@@ -9,6 +9,13 @@ from openai import OpenAI
 from config import LLM_CONFIG
 
 
+def _get_tool_function(name: str):
+    """根据工具名查找工具函数"""
+    # 动态导入工具模块
+    from tools import TOOL_FUNCTIONS
+    return TOOL_FUNCTIONS.get(name)
+
+
 class LLMClient:
     """豆包 LLM 客户端 (流式 + 工具调用)"""
 
@@ -54,7 +61,7 @@ class LLMClient:
         """
         import time
         t0 = time.time()
-        MIN_CHUNK = 7
+        MIN_CHUNK = 20
         buffer = ""
         first_chunk_time = None
         tts_first_chunk_time = None
@@ -156,7 +163,7 @@ class LLMClient:
                     print(f"[llm] 调用工具: {tool_name}")
 
                     # 查找并执行工具函数
-                    tool_func = self._get_tool_function(tool_name, tools)
+                    tool_func = _get_tool_function(tool_name)
                     if not tool_func:
                         tool_result = f"错误：未找到工具 {tool_name}"
                     else:
@@ -182,11 +189,5 @@ class LLMClient:
             print(f"[llm] 请求失败: {e}  总耗时={time.time()-t0:.2f}s")
             if callback:
                 callback(str(e), None)
-
-    def _get_tool_function(self, name: str, tools: list):
-        """根据工具名查找工具函数"""
-        # 动态导入工具模块
-        from tools import TOOL_FUNCTIONS
-        return TOOL_FUNCTIONS.get(name)
 
 

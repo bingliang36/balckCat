@@ -9,7 +9,7 @@ from threading import Event
 
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
-from .audio_recorder import PTTAudioRecorder
+from .audio_recorder import PTTAudioRecorder, VADRecorder
 from .sensevoice_stt import SenseVoiceSTT
 
 
@@ -36,6 +36,7 @@ class STTController(QObject):
 
         self.live2d_widget = live2d_widget
         self.config = config or {}
+        self.mode = self.config.get("mode", "vad")
 
         # 队列
         self.recording_filename_queue = Queue()
@@ -44,16 +45,32 @@ class STTController(QObject):
         # 录音状态事件
         self.is_recording_event = Event()
 
-        # PTT 录音器
-        self.recorder = PTTAudioRecorder(
-            recording_filename_queue=self.recording_filename_queue,
-            samplerate=self.config.get("samplerate", 44100),
-            channels=self.config.get("channels", 1),
-            record_key=self.config.get("ptt_key"),
-            min_recording_duration=self.config.get("min_recording_duration", 1.0),
-            cooldown_period=self.config.get("cooldown_period", 0.5),
-            enable_print=self.config.get("enable_print", True),
-        )
+        # 根据 mode 选择录音器
+        if self.mode == "vad":
+            self.recorder = VADRecorder(
+                recording_filename_queue=self.recording_filename_queue,
+                samplerate=self.config.get("samplerate", 44100),
+                channels=self.config.get("channels", 1),
+                speech_threshold=self.config.get("vad_speech_threshold", 0.01),
+                silence_threshold=self.config.get("vad_silence_threshold", 0.003),
+                start_frames=self.config.get("vad_start_frames", 3),
+                end_frames=self.config.get("vad_end_frames", 40),
+                silence_time=self.config.get("silence_time", 1.5),
+                min_recording_duration=self.config.get("min_recording_duration", 0.5),
+                enable_print=self.config.get("enable_print", True),
+                on_speech_start=self._on_vad_speech_start,
+                on_speech_end=self._on_vad_speech_end,
+            )
+        else:
+            self.recorder = PTTAudioRecorder(
+                recording_filename_queue=self.recording_filename_queue,
+                samplerate=self.config.get("samplerate", 44100),
+                channels=self.config.get("channels", 1),
+                record_key=self.config.get("ptt_key"),
+                min_recording_duration=self.config.get("min_recording_duration", 1.0),
+                cooldown_period=self.config.get("cooldown_period", 0.5),
+                enable_print=self.config.get("enable_print", True),
+            )
 
         # SenseVoice STT - 直接使用本地克隆的模型目录
         model_dir = self.config.get("model_dir") or ""
@@ -76,15 +93,36 @@ class STTController(QObject):
         # 退出事件
         self._exit_event = Event()
 
+    # ── VAD 回调 ──────────────────────────────────────────────────────────────
+
+    def _on_vad_speech_start(self):
+        """VAD 检测到语音开始"""
+        self.is_recording_event.set()
+        self.recording_state_changed.emit(True)
+
+    def _on_vad_speech_end(self, audio_path):
+        """VAD 录音片段结束"""
+        self.is_recording_event.clear()
+        self.recording_state_changed.emit(False)
+
+    # ── 启动 ─────────────────────────────────────────────────────────────────
+
     def start(self):
         """启动 STT 系统"""
         # 启动 SenseVoice 转录线程
         self.stt.start(exit_event=self._exit_event)
 
-        # 启动录音监听（pynput 在独立线程中运行）
-        import threading
-        thread = threading.Thread(target=self._run_recorder, daemon=True)
-        thread.start()
+        # 启动录音器
+        if self.mode == "vad":
+            # VAD 模式：recorder 自带线程和回调
+            import threading
+            thread = threading.Thread(target=self.recorder.start, daemon=True)
+            thread.start()
+        else:
+            # PTT 模式：pynput 键盘监听 + monkey-patch 转发状态
+            import threading
+            thread = threading.Thread(target=self._run_recorder, daemon=True)
+            thread.start()
 
         # 启动轮询定时器（100ms 间隔）
         self._poll_timer.start(100)
@@ -92,7 +130,7 @@ class STTController(QObject):
         print("[STT] STT 系统已启动")
 
     def _run_recorder(self):
-        """在独立线程中运行录音器"""
+        """在独立线程中运行 PTT 录音器"""
         # 捕获并转发录音状态
         original_start = self.recorder.start_recording
         original_stop = self.recorder.stop_recording

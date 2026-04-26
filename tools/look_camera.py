@@ -33,7 +33,7 @@ def look_camera() -> str:
     import base64
 
     API_KEY = "f8bd5e54ab554b58ae6876a9aeb06002.Y1X7zu2X4Q7D36PV"
-    MODEL = "glm-4.6v-flash"
+    MODEL = "glm-4.6v"
     MAX_WIDTH = 1024
 
     # 捕获摄像头

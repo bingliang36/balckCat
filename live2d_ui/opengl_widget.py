@@ -175,6 +175,40 @@ class Live2DOpenGLWidget(QOpenGLWidget):
             chunk_callback=self._on_llm_chunk
         )
 
+    def trigger_auto_reply(self, text: str):
+        """
+        宠物主动说话（屏幕守护等触发）
+        不经过用户聊天框，直接走 LLM → TTS
+        """
+        print(f"[auto] 宠物主动: {text}")
+
+        # 直接调用 LLM，不保存为用户消息
+        self.llm.ask_with_tools(
+            text,
+            tools=TOOL_DEFINITIONS,
+            callback=self._on_auto_response,
+            chunk_callback=self._on_auto_chunk
+        )
+
+    def _on_auto_chunk(self, sentence: str):
+        """自动回复的 chunk 回调（不发到网页聊天）"""
+        result = parse_emotion_from_text(sentence)
+
+        # 立即送 TTS 播放
+        if result.clean_text.strip():
+            self.tts.speak_async(result.clean_text, result.triggers)
+        elif result.triggers:
+            if self.model:
+                self.model.ResetExpression()
+                self.model.SetExpression(result.triggers[0].expression_name)
+
+    def _on_auto_response(self, error, reply: str):
+        """自动回复完成回调"""
+        if error:
+            print(f"[auto] 错误: {error}")
+            return
+        self.tts.end_turn()
+
     def _on_llm_chunk(self, sentence: str):
         """
         LLM 流式句子回调 — 解析情绪触发点，送 TTS 播放，同时发送 chunk 到 WebSocket

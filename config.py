@@ -94,3 +94,12 @@ STT_CONFIG = {
 # "native_vision": 使用LLM自带的视觉能力（look工具返回IMAGE:base64）
 # "external_vlm": 使用外部VLM（如glm-4v）分析图像
 VISION_MODE = "native_vision"
+
+# 屏幕闲置检测
+IDLE_CONFIG = {
+    "enabled": True,                        # 是否启用屏幕守护
+    "check_interval": 10,                     # 检查间隔（秒）
+    "idle_threshold": 120,                   # 超过多少秒无操作视为闲置（秒）
+    "max_reminders": 3,                      # 单次闲置最多提醒次数
+    "reminder_cooldown": 30,                # 两次提醒之间的冷却时间（秒）
+}

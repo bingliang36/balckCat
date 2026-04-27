@@ -13,8 +13,9 @@ from PyQt5.QtCore import QUrl
 
 from live2d_ui.window import Live2DWindow
 from stt.controller import STTController
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, STT_CONFIG
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, STT_CONFIG, IDLE_CONFIG
 from web_ui.server import run_server, set_chat_callback, get_user_message
+from tools.idle_monitor import IdleMonitor
 
 
 def poll_user_messages(live2d_widget):
@@ -56,6 +57,10 @@ def main():
     # 创建 STT 控制器
     stt_controller = STTController(pet_window.live2d_widget, STT_CONFIG)
     stt_controller.start()
+
+    # 创建屏幕守护
+    idle_monitor = IdleMonitor(pet_window.live2d_widget, IDLE_CONFIG)
+    idle_monitor.start()
 
     sys.exit(app.exec_())
 

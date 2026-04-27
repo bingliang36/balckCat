@@ -4,9 +4,9 @@
 
 # LLM (豆包) 配置
 LLM_CONFIG = {
-    "api_key": "e9f4b7cb-88c4-4a58-b1fc-d5b62fb8d319",
+    "api_key": "YOUR_API_KEY",
     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
-    "model": "doubao-seed-2-0-mini-260215",
+    "model": "YOUR_MODEL",
     "max_tokens": 200,
     "reasoning_effort": "minimal",  # minimal：关闭深度思考，推理速度最快；low：轻度思考；medium：标准思考（默认）；high：深度思考，推理效果最佳
     "system_prompt": (
@@ -36,8 +36,8 @@ TTS_CONFIG = {
     "provider": "doubao",
     "doubao": {
         "enabled": True,
-        "api_key": "28b6862d-3d27-458c-81d0-3836c1d804a7",
-        "voice_type": "S_wpRH68lW1",
+        "api_key": "YOUR_API_KEY", # 语音模型apikey
+        "voice_type": "YOUR_VOICE_TYPE", # 豆包语音ID
         "cluster": "volcano_icl",
         "speed_ratio": 1.0,
     },
@@ -64,7 +64,7 @@ WINDOW_HEIGHT = 700
 # MemNet AI 记忆配置
 MEMNET_CONFIG = {
     "enabled": True,                       # 是否启用 MemNet 云端记忆（收费功能）True为开启，False为关闭
-    "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",
+    "api_key": "YOUR_API_KEY",
     "base_url": "https://api.memnetai.com",
     "memory_agent_name": "deskpet",
     "namespace": "blackcat",
@@ -79,7 +79,7 @@ STT_CONFIG = {
     "channels": 1,                          # 通道数（mono）
     "min_recording_duration": 0.5,          # 最短录音时长（秒）
     "cooldown_period": 0.5,                 # 录音冷却时间（秒）
-    "model_dir": "D:/pythonCode/PythonProject9/SenseVoiceSmall",  # 本地模型目录
+    "model_dir": "MODEL_DIR",  # 本地SenseVoiceSmall模型目录,例如：D:/pythonCode/PythonProject9/SenseVoiceSmall
     "device": "cpu",                    # 运行设备，"cuda:0" 或 "cpu"
     "enable_print": True,                   # 是否打印日志
     # VAD 参数（mode="vad" 时生效）

@@ -85,18 +85,17 @@ class LLMClient:
                 req_delay = first_chunk_time - t0
                 print(f'[llm] 首字返回(stream)  耗时={req_delay:.3f}s')
 
-            # 碰到标点 且 字数够 且 没有未完成的颜文字 → 送 TTS
-            has_punct = any(buffer.endswith(p) for p in self._SENT_ENDS)
-            if has_punct and len(buffer) >= MIN_CHUNK and not has_open_emoticon(buffer):
+            # 凑满 MIN_CHUNK 字 且 碰到句末标点 且 没有未完成的颜文字 → 送 TTS
+            has_sent_end = any(buffer.endswith(p) for p in self._SENT_ENDS)
+            if len(buffer) >= MIN_CHUNK and has_sent_end and not has_open_emoticon(buffer):
                 send_chunk(buffer)
                 buffer = ""
 
-        # 发送剩余内容
+        # 发送剩余内容（即使没有句末标点）
         if buffer.strip():
-            chunk_callback(buffer.strip())
+            send_chunk(buffer.strip())
 
         print(f'[llm] 流式输出完成  总耗时={time.time()-t0:.3f}s')
-        # 所有 chunk 发完后通知 TTS 回合结束
         if done_callback:
             done_callback()
 
@@ -168,7 +167,11 @@ class LLMClient:
                         tool_result = f"错误：未找到工具 {tool_name}"
                     else:
                         try:
-                            tool_result = tool_func()
+                            # recall_memory 需要用户的原始输入作为 query
+                            if tool_name == "recall_memory":
+                                tool_result = tool_func(query=text)
+                            else:
+                                tool_result = tool_func()
                             print(f"[llm] 工具结果: {tool_result}")
                         except Exception as e:
                             tool_result = f"工具执行错误: {e}"

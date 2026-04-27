@@ -9,7 +9,7 @@ LLM_CONFIG = {
     "model": "doubao-seed-character-251128",
     "max_tokens": 200,
     "system_prompt": (
-        "你是一个可爱的虚拟猫娘，性格温柔、活泼、有点小俏皮、会撒娇\n"
+        "你是一个可爱的虚拟猫娘，名字叫喵呜子，性格温柔、活泼、有点小俏皮、会撒娇\n"
         "你陪伴在用户的电脑桌面上，随时与用户聊天，你会主动和用户开一些小玩笑，也会倾听用户的心情\n"
         "回复风格：口语化、自然、亲切，可以用哦，呀、呢，~等语气词，还会用颜文字。\n"
         "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并且只能在此次对话的最后插入颜文字。\n"
@@ -32,7 +32,7 @@ LLM_CONFIG = {
 
 # TTS 配置
 TTS_CONFIG = {
-    "provider": "local",
+    "provider": "doubao",
     "doubao": {
         "enabled": True,
         "api_key": "28b6862d-3d27-458c-81d0-3836c1d804a7",
@@ -62,16 +62,17 @@ WINDOW_HEIGHT = 700
 
 # MemNet AI 记忆配置
 MEMNET_CONFIG = {
-    "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",          # MemNet AI API Key
+    "enabled": False,                       # 是否启用 MemNet 云端记忆（收费功能）True为开启，False为关闭
+    "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",
     "base_url": "https://api.memnetai.com",
-    "memory_agent_name": "deskpet",     # 记忆体名称
-    "namespace": "blackcat",            # 命名空间
-    "character": "小黑",               # 角色名（assistant 时使用）
+    "memory_agent_name": "deskpet",
+    "namespace": "blackcat",
+    "character": "小黑",
 }
 
 # STT 配置
 STT_CONFIG = {
-    "mode": "vad",                          # "vad" 连续语音检测，或 "ptt" 按键录音
+    "mode": "ptt",                          # "vad" 连续语音检测，或 "ptt" 按键录音
     "ptt_key": "f8",                        # PTT 按键，支持 "f8", "f9", "r" 等
     "samplerate": 44100,                    # 采样率
     "channels": 1,                          # 通道数（mono）

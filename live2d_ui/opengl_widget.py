@@ -51,6 +51,10 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self._last_user_text = ""     # 最近一次用户输入
         self._last_assistant_text = ""  # 最近一次AI回复
 
+        # 聊天窗口引用（用于流式显示）
+        self._chat_window = None
+        self._current_bubble = None  # 当前正在流式输出的气泡
+
         # 渲染定时器
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -61,6 +65,10 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         self._intro_done = False   # 开场动画是否已结束
         self._intro_ear_phase = 0.0
         self._intro_blink_done = False
+
+    def set_chat_window(self, chat_window):
+        """设置聊天窗口引用，用于流式显示"""
+        self._chat_window = chat_window
 
     def initializeGL(self):
         """初始化 OpenGL 和 Live2D 模型"""
@@ -154,6 +162,11 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         # 保存用户输入，对话结束后用于异步存储到 MemNet
         self._last_user_text = text
 
+        # 在聊天窗口显示用户消息
+        if self._chat_window:
+            self._chat_window.add_user_message(text)
+            self._chat_window.show_window()
+
         # 使用带工具的 LLM 调用（recall 作为工具之一）
         self.llm.ask_with_tools(
             text,
@@ -164,7 +177,7 @@ class Live2DOpenGLWidget(QOpenGLWidget):
 
     def _on_llm_chunk(self, sentence: str):
         """
-        LLM 流式句子回调 — 解析情绪触发点，送 TTS 播放
+        LLM 流式句子回调 — 解析情绪触发点，送 TTS 播放，同时发送 chunk 到 WebSocket
         """
         print(f"[chat] 助手 (句): {sentence}")
 
@@ -173,6 +186,10 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         print(f"[emotion] 解析结果  句: {repr(sentence[:30])}")
         print(f"[emotion] 纯净文本: {repr(result.clean_text[:30])}  触发点: {[(t.char_pos, t.expression_name) for t in result.triggers]}")
         print(f"[emotion] 送TTS  clean: {repr(result.clean_text)}  triggers: {[(t.char_pos, t.expression_name) for t in result.triggers]}")
+
+        # 发送 chunk 到 HTTP 轮询队列（用于网页打字机效果）
+        from web_ui import send_chunk_sync
+        send_chunk_sync(sentence)
 
         # 立即送 TTS 播放（异步不阻塞），带上情绪触发点
         print(f"[tts] speak_async  raw={repr(sentence[:40])}  clean={repr(result.clean_text[:40])}  triggers={[(t.char_pos, t.expression_name) for t in result.triggers]}")
@@ -188,14 +205,20 @@ class Live2DOpenGLWidget(QOpenGLWidget):
             print(f"[tts] 跳过（无文本无情绪）")
 
     def _on_llm_response(self, error, reply: str):
-        """LLM 完成回调 — 通知 TTS 本轮结束，异步存储记忆 + 提取关键词"""
+        """LLM 完成回调 — 通知 TTS 本轮结束，异步存储记忆"""
         if error:
             print(f"[llm] 错误: {error}")
             return
         print(f"[chat] 助手 (完毕): {reply}")
         self._last_assistant_text = reply
 
-        # 对话结束后，异步存储记忆 + 提取关键词
+        # 发送完成信号到 WebSocket
+        print("[llm] 发送 done 信号")
+        from web_ui import send_done_sync
+        send_done_sync()
+        print("[llm] done 信号已发送")
+
+        # 对话结束后，异步存储记忆
         self._async_store_memory()
 
         self.tts.end_turn()
@@ -207,6 +230,8 @@ class Live2DOpenGLWidget(QOpenGLWidget):
         from config import MEMNET_CONFIG
 
         def _do():
+            if not MEMNET_CONFIG.get("enabled", True):
+                return
             try:
                 messages = [
                     Message(role="user", content=self._last_user_text, character="用户"),

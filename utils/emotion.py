@@ -17,7 +17,6 @@ EMOTION_EXPRESSION_MAP = {
     "surprised":   "expression3",   # quanquanyan
     "embarrassed": "expression6",   # lianhong
     "neutral":     "expression3",   # 中性用惊讶代替
-    "疑惑":        "expression3",
 }
 
 
@@ -47,7 +46,6 @@ EMOTICON_EMOTION_MAP = {
     "(ω＼)":   "embarrassed",    # 无斜杠变体（常见于LLM输出）
     "(*/ω＼*)": "embarrassed",   # 带星号装饰 + 半角斜杠
     "(*／ω＼*)": "embarrassed",  # 带星号装饰 + 全角斜杠
-    "(≿⁠㏨⁠)":  "embarrassed",
 }
 
 

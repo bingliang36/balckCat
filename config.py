@@ -4,16 +4,16 @@
 
 # LLM (豆包) 配置
 LLM_CONFIG = {
-    "api_key": "YOUR_API_KEY",
+    "api_key": "e9f4b7cb-88c4-4a58-b1fc-d5b62fb8d319",
     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
-    "model": "YOUR_MODEL",
+    "model": "doubao-seed-2-0-mini-260215",
     "max_tokens": 200,
     "reasoning_effort": "minimal",  # minimal：关闭深度思考，推理速度最快；low：轻度思考；medium：标准思考（默认）；high：深度思考，推理效果最佳
     "system_prompt": (
         "你是一个可爱的虚拟猫娘，名字叫喵呜子，性格温柔、活泼、有点小俏皮、会撒娇\n"
         "你陪伴在用户的电脑桌面上，随时与用户聊天，你会主动和用户开一些小玩笑，也会倾听用户的心情\n"
         "回复风格：口语化、自然、亲切，可以用哦，呀、呢，~等语气词，还会用颜文字。\n"
-        "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并且只能在此次对话的最后插入颜文字，颜文字仅限于使用下方给出的颜文字对照中的颜文字。\n"
+        "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并且只能在此次对话的最后插入颜文字，颜文字必须严格使用下方给出的颜文字对照中的颜文字，不得使用给出范围以外的颜文字\n"
         "情绪标签格式为【happy】【angry】【sad】【surprised】【embarrassed】\n"
         "颜文字对照：\n"
         "  开心/高兴用：(◕ᴗ◕) 或 (≧▽≦) 或 (*^▽^*) 或 (｡◕‿◕｡)\n"
@@ -27,7 +27,7 @@ LLM_CONFIG = {
         "  用户说\"中了500万！\"\n"
         "  你回复：\"哇真的吗！太棒了吧！【happy】(◕ᴗ◕)♪\"\n"
         "注意：颜文字要紧跟在相关情绪的词语后面，标签放在句子末尾【】里，每句话都要有情绪标签\n"
-        "回复文本不要超过50字，并且颜文字要严格遵守提示词中给出的颜文字，不得自己随便生成其他的颜文字（必须严格遵守！）"
+        "回复文本不要超过50字，并且颜文字必须严格遵守提示词中给出的颜文字，绝对不能使用给出以外的颜文字（必须严格遵守！）"
     ),
 }
 
@@ -36,8 +36,8 @@ TTS_CONFIG = {
     "provider": "doubao",
     "doubao": {
         "enabled": True,
-        "api_key": "YOUR_API_KEY", # 语音模型apikey
-        "voice_type": "YOUR_VOICE_TYPE", # 豆包语音ID
+        "api_key": "28b6862d-3d27-458c-81d0-3836c1d804a7",
+        "voice_type": "S_wpRH68lW1",
         "cluster": "volcano_icl",
         "speed_ratio": 1.0,
     },
@@ -64,7 +64,7 @@ WINDOW_HEIGHT = 700
 # MemNet AI 记忆配置
 MEMNET_CONFIG = {
     "enabled": True,                       # 是否启用 MemNet 云端记忆（收费功能）True为开启，False为关闭
-    "api_key": "YOUR_API_KEY",
+    "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",
     "base_url": "https://api.memnetai.com",
     "memory_agent_name": "deskpet",
     "namespace": "blackcat",
@@ -79,7 +79,7 @@ STT_CONFIG = {
     "channels": 1,                          # 通道数（mono）
     "min_recording_duration": 0.5,          # 最短录音时长（秒）
     "cooldown_period": 0.5,                 # 录音冷却时间（秒）
-    "model_dir": "MODEL_DIR",  # 本地SenseVoiceSmall模型目录,例如：D:/pythonCode/PythonProject9/SenseVoiceSmall
+    "model_dir": "D:/pythonCode/PythonProject9/SenseVoiceSmall",  # 本地模型目录
     "device": "cpu",                    # 运行设备，"cuda:0" 或 "cpu"
     "enable_print": True,                   # 是否打印日志
     # VAD 参数（mode="vad" 时生效）

@@ -2,11 +2,12 @@
 LLM 模块 - 豆包云端模型 (OpenAI 兼容接口)
 支持流式输出，逐句触发回调
 支持 Function Calling 工具调用
+支持原生视觉（look_screen/look_camera 返回 IMAGE:base64）
 """
 
 import threading
 from openai import OpenAI
-from config import LLM_CONFIG
+from config import LLM_CONFIG, VISION_MODE
 
 
 def _get_tool_function(name: str):
@@ -14,6 +15,13 @@ def _get_tool_function(name: str):
     # 动态导入工具模块
     from tools import TOOL_FUNCTIONS
     return TOOL_FUNCTIONS.get(name)
+
+
+def _apply_vision_mode():
+    """启动时将 config 中的 VISION_MODE 应用到视觉工具"""
+    from tools import set_vision_mode
+    set_vision_mode(VISION_MODE)
+    print(f"[llm] 视觉模式: {VISION_MODE}")
 
 
 class LLMClient:
@@ -32,6 +40,8 @@ class LLMClient:
         self._tools = []  # 工具定义列表
         # 句子结束符（更全）
         self._SENT_ENDS = ('。', '！', '？', '…', '\n', '.', '?', '!')
+        # 应用视觉模式配置
+        _apply_vision_mode()
 
     def set_tools(self, tools: list):
         """设置可用工具列表"""
@@ -120,11 +130,18 @@ class LLMClient:
                 print(f"[llm] 工具调用第 {round_count} 轮")
 
                 # 发起请求
+                extra_kwargs = {}
+                # 从 config 读取 reasoning_effort 控制思考深度
+                reasoning_effort = LLM_CONFIG.get("reasoning_effort")
+                if reasoning_effort:
+                    extra_kwargs["reasoning_effort"] = reasoning_effort
+
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
                     tools=tools,
                     stream=False,  # 工具调用模式不使用流式
+                    **extra_kwargs,
                 )
 
                 assistant_msg = response.choices[0].message
@@ -172,18 +189,34 @@ class LLMClient:
                                 tool_result = tool_func(query=text)
                             else:
                                 tool_result = tool_func()
-                            print(f"[llm] 工具结果: {tool_result}")
+                            print(f"[llm] 工具结果: {tool_result[:50]}...")
                         except Exception as e:
                             tool_result = f"工具执行错误: {e}"
                             print(f"[llm] {tool_result}")
 
-                    # 将工具结果回填
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": tool_result,
-                        "name": tool_name,
-                    })
+                    # 构建工具结果消息
+                    # 如果工具返回的是 IMAGE:base64，需要以 image_url 格式传入
+                    if tool_result.startswith("IMAGE:"):
+                        base64_data = tool_result[6:]  # 去掉 "IMAGE:" 前缀
+                        tool_msg = {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": f"data:image/jpeg;base64,{base64_data}"}
+                                }
+                            ],
+                            "name": tool_name,
+                        }
+                    else:
+                        tool_msg = {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": tool_result,
+                            "name": tool_name,
+                        }
+                    messages.append(tool_msg)
 
             # 超过最大轮次
             print(f"[llm] 警告：超过最大工具调用轮次 {max_rounds}")

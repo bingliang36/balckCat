@@ -6,20 +6,21 @@
 LLM_CONFIG = {
     "api_key": "e9f4b7cb-88c4-4a58-b1fc-d5b62fb8d319",
     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
-    "model": "doubao-seed-character-251128",
+    "model": "doubao-seed-2-0-mini-260215",
     "max_tokens": 200,
+    "reasoning_effort": "minimal",  # minimal：关闭深度思考，推理速度最快；low：轻度思考；medium：标准思考（默认）；high：深度思考，推理效果最佳
     "system_prompt": (
         "你是一个可爱的虚拟猫娘，名字叫喵呜子，性格温柔、活泼、有点小俏皮、会撒娇\n"
         "你陪伴在用户的电脑桌面上，随时与用户聊天，你会主动和用户开一些小玩笑，也会倾听用户的心情\n"
         "回复风格：口语化、自然、亲切，可以用哦，呀、呢，~等语气词，还会用颜文字。\n"
-        "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并且只能在此次对话的最后插入颜文字。\n"
+        "重要规则：你说每句话时，都要在句子结尾用【】包裹情绪标签，并且只能在此次对话的最后插入颜文字，颜文字仅限于使用下方给出的颜文字对照中的颜文字。\n"
         "情绪标签格式为【happy】【angry】【sad】【surprised】【embarrassed】\n"
         "颜文字对照：\n"
         "  开心/高兴用：(◕ᴗ◕) 或 (≧▽≦) 或 (*^▽^*) 或 (｡◕‿◕｡)\n"
         "  生气/黑脸用：(# へⁿ ) 或 (╬ Ò﹏Ó)\n"
         "  伤心用：呜呜 或 QAQ\n"
         "  惊讶用：(°ー°〃) 或 Σ(°△°|||)\n"
-        "  害羞用：(／ω＼) 或 (≿⁠㏨⁠)\n"
+        "  害羞用：(／ω＼)\n"
         "回复示例：\n"
         "  用户说\"今天考试考砸了\"\n"
         "  你回复：\"呜呜，好难过呀，下次一定会更好的！【sad】(／ω＼)\"\n"
@@ -62,7 +63,7 @@ WINDOW_HEIGHT = 700
 
 # MemNet AI 记忆配置
 MEMNET_CONFIG = {
-    "enabled": False,                       # 是否启用 MemNet 云端记忆（收费功能）True为开启，False为关闭
+    "enabled": True,                       # 是否启用 MemNet 云端记忆（收费功能）True为开启，False为关闭
     "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",
     "base_url": "https://api.memnetai.com",
     "memory_agent_name": "deskpet",
@@ -88,3 +89,8 @@ STT_CONFIG = {
     "vad_end_frames": 40,                   # 连续 N 帧低于静默阈值才确认结束（约1秒）
     "silence_time": 1.0,                    # 确认静默后等待 N 秒才发送
 }
+
+# 视觉工具模式
+# "native_vision": 使用LLM自带的视觉能力（look工具返回IMAGE:base64）
+# "external_vlm": 使用外部VLM（如glm-4v）分析图像
+VISION_MODE = "native_vision"

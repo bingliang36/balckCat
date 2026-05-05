@@ -2,12 +2,17 @@
 from .look_screen import look_screen, look_screen_definition
 from .look_camera import look_camera, look_camera_definition
 from .recall_memory import recall_memory, recall_memory_definition
+from .open_bilibili import open_bilibili, open_bilibili_definition
+
+# 注意：联网搜索功能已移至 LLM 客户端原生支持
+# 不再使用独立的 web_search 工具（联网搜索与函数调用冲突）
 
 # 导出所有工具定义，用于注册到 LLM
 TOOL_DEFINITIONS = [
     look_screen_definition,
     look_camera_definition,
     recall_memory_definition,
+    open_bilibili_definition,
 ]
 
 # 导出所有工具函数
@@ -15,6 +20,7 @@ TOOL_FUNCTIONS = {
     "look_screen": look_screen,
     "look_camera": look_camera,
     "recall_memory": recall_memory,
+    "open_bilibili": open_bilibili,
 }
 
 

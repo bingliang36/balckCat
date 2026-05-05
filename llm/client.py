@@ -17,6 +17,19 @@ def _get_tool_function(name: str):
     return TOOL_FUNCTIONS.get(name)
 
 
+def _is_realtime_query(text: str) -> bool:
+    """
+    判断用户是否询问实时信息（需要联网搜索）
+    """
+    realtime_keywords = [
+        "天气", "新闻", "今天", "现在", "最新", "实时",
+        "股价", "股票", "比分", "比赛", "汇率", "行情",
+        "热搜", "榜单", "排行", "热点",
+    ]
+    text_lower = text.lower()
+    return any(kw in text_lower for kw in realtime_keywords)
+
+
 def _apply_vision_mode():
     """启动时将 config 中的 VISION_MODE 应用到视觉工具"""
     from tools import set_vision_mode
@@ -109,10 +122,118 @@ class LLMClient:
         if done_callback:
             done_callback()
 
+    def _request_with_web_search(self, text: str, callback, chunk_callback):
+        """
+        联网搜索模式 - 使用豆包原生 web_search 工具
+        不使用 function calling，直接用 responses API 的 web_search 工具
+        """
+        import time
+        t0 = time.time()
+
+        try:
+            # 使用 responses API + web_search 工具（限制搜索范围，精简输出）
+            response = self.client.responses.create(
+                model=self.model,
+                input=[
+                    {"role": "user", "content": text}
+                ],
+                tools=[{
+                    "type": "web_search",
+                    "max_keyword": 1,       # 最少搜索关键词
+                    "limit": 2,             # 最多返回3条结果
+                }],
+                max_tool_calls=1,           # 只搜索一轮
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "weather_result",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reply": {"type": "string", "description": "简短口语化回复，50字以内"}
+                            },
+                            "required": ["reply"]
+                        },
+                        "strict": True
+                    }
+                },
+            )
+
+            # 获取回复内容
+            full_response = ""
+            for item in response.output:
+                if item.type == "message" and item.role == "assistant":
+                    for content in item.content:
+                        if content.type == "output_text":
+                            full_response = content.text
+                        elif content.type == "function":
+                            import json
+                            try:
+                                args = json.loads(content.arguments or "{}")
+                                summary = args.get("summary", "")
+                                content_text = args.get("content", "")
+                                parts = []
+                                if summary:
+                                    parts.append(summary)
+                                if content_text:
+                                    parts.append(content_text)
+                                if parts:
+                                    full_response = "。".join(parts)
+                            except Exception as e:
+                                print(f"[llm] 解析function输出失败: {e}")
+
+            # 如果输出仍然是原始 JSON（包含 summary/content 字段），则清理
+            if '"reply"' in full_response or '"summary"' in full_response or '"content"' in full_response:
+                import json
+                try:
+                    data = json.loads(full_response)
+                    # 优先取 reply，其次取 summary+content
+                    reply = data.get("reply", "")
+                    if reply:
+                        full_response = reply
+                    else:
+                        summary = data.get("summary", "")
+                        content_text = data.get("content", "")
+                        parts = [p for p in [summary, content_text] if p]
+                        full_response = "。".join(parts) if parts else str(data)
+                except:
+                    pass
+
+            print(f"[llm] 最终回复: {full_response[:100]}...")
+
+            req_done_time = time.time()
+            req_delay = req_done_time - t0
+            print(f"[llm] 联网搜索完成  请求延迟={req_delay:.3f}s  内容={full_response[:50]}...")
+
+            # 保存历史
+            self._history.append({"role": "user", "content": text})
+            self._history.append({"role": "assistant", "content": full_response})
+
+            # 流式输出
+            if chunk_callback and full_response:
+                def done_callback():
+                    if callback:
+                        callback(None, full_response)
+                self._stream_response(full_response, chunk_callback, done_callback)
+            else:
+                if callback:
+                    callback(None, full_response)
+
+        except Exception as e:
+            print(f"[llm] 联网搜索失败: {e}")
+            if callback:
+                callback(str(e), None)
+
     def _request_with_tools(self, text: str, tools: list, callback, chunk_callback):
         """支持工具调用的请求处理"""
         import time
         t0 = time.time()
+
+        # 判断是否需要联网搜索（实时信息查询）
+        if _is_realtime_query(text):
+            print("[llm] 检测到实时查询，使用联网搜索模式")
+            self._request_with_web_search(text, callback, chunk_callback)
+            return
 
         # 构建消息历史
         messages = [
@@ -178,6 +299,15 @@ class LLMClient:
                     tool_name = tool_call.function.name
                     print(f"[llm] 调用工具: {tool_name}")
 
+                    # 解析工具参数
+                    tool_args = {}
+                    if tool_call.function.arguments:
+                        import json
+                        try:
+                            tool_args = json.loads(tool_call.function.arguments)
+                        except json.JSONDecodeError:
+                            pass
+
                     # 查找并执行工具函数
                     tool_func = _get_tool_function(tool_name)
                     if not tool_func:
@@ -188,7 +318,7 @@ class LLMClient:
                             if tool_name == "recall_memory":
                                 tool_result = tool_func(query=text)
                             else:
-                                tool_result = tool_func()
+                                tool_result = tool_func(**tool_args)
                             print(f"[llm] 工具结果: {tool_result[:50]}...")
                         except Exception as e:
                             tool_result = f"工具执行错误: {e}"

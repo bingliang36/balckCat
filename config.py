@@ -4,7 +4,7 @@
 
 # LLM (豆包) 配置
 LLM_CONFIG = {
-    "api_key": "e9f4b7cb-88c4-4a58-b1fc-d5b62fb8d319",
+    "api_key": "YOUR_API_KEY",
     "base_url": "https://ark.cn-beijing.volces.com/api/v3",
     "model": "doubao-seed-2-0-mini-260215",
     "max_tokens": 200,
@@ -37,7 +37,7 @@ TTS_CONFIG = {
     "provider": "doubao",
     "doubao": {
         "enabled": True,
-        "api_key": "28b6862d-3d27-458c-81d0-3836c1d804a7",
+        "api_key": "YOUR_API_KEY",
         "voice_type": "S_wpRH68lW1",
         "cluster": "volcano_icl",
         "speed_ratio": 1.0,
@@ -65,7 +65,7 @@ WINDOW_HEIGHT = 700
 # MemNet AI 记忆配置
 MEMNET_CONFIG = {
     "enabled": True,                       # 是否启用 MemNet 云端记忆（收费功能）True为开启，False为关闭
-    "api_key": "memnet-eb51bd18-872d-4cc7-9313-4d1800dcb6ec",
+    "api_key": "YOUR_API_KEY",
     "base_url": "https://api.memnetai.com",
     "memory_agent_name": "deskpet",
     "namespace": "blackcat",
